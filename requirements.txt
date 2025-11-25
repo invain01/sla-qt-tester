@@ -1,0 +1,14 @@
+# PyWebView Desktop App 依赖
+
+# 核心依赖
+pywebview>=5.0.0
+
+# 可选：更好的性能和功能
+# macOS 推荐
+pyobjc>=10.0; sys_platform == 'darwin'
+
+# Windows 推荐
+# pywin32>=306; sys_platform == 'win32'
+
+# Linux 推荐 (需要系统安装 GTK)
+# PyGObject>=3.46.0; sys_platform == 'linux'
