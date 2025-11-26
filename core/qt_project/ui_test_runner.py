@@ -65,12 +65,13 @@ def run_ui_test(executable_path: str, test_name: str, project_dir: str) -> UITes
     logger.info(f"运行 UI 测试: {test_name}")
     
     try:
-        # 运行测试
+        # 运行测试（设置工作目录为项目目录）
         result = subprocess.run(
             [executable_path],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
+            cwd=project_dir  # 关键：设置工作目录
         )
         
         output = result.stdout + result.stderr

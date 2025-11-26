@@ -54,8 +54,11 @@ void TestUIInteraction::init()
     // 初始化步骤计数器
     stepCounter = 0;
     
-    // 创建截图目录（隐藏目录）
+    // 使用当前工作目录作为项目根目录（Python 已经设置了正确的 cwd）
     QString projectDir = QDir::currentPath();
+    qDebug() << "项目根目录:" << projectDir;
+    
+    // 创建截图目录（隐藏目录）
     screenshotDir = projectDir + "/.test_screenshots";
     QDir dir;
     if (!dir.exists(screenshotDir)) {
@@ -72,28 +75,30 @@ void TestUIInteraction::init()
     
     qDebug() << "截图目录:" << screenshotDir;
     
-    // 创建主窗口
-    mainWindow = new MainWindow();
-    mainWindow->setWindowTitle("DiagramScene UI Test");
-    mainWindow->resize(800, 600);
-    
-    // 获取场景和视图
+    // 创建场景和视图
     QMenu *itemMenu = new QMenu();
     scene = new DiagramScene(itemMenu, this);
     scene->setSceneRect(QRectF(0, 0, 5000, 5000));
     
     view = new QGraphicsView(scene);
-    view->setParent(mainWindow);
     view->setRenderHint(QPainter::Antialiasing);
     view->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-    view->setGeometry(0, 0, 800, 600);
     
-    // 显示窗口
+    // 创建 MainWindow 并将 view 设置为中央部件
+    mainWindow = new MainWindow();
+    mainWindow->setWindowTitle("DiagramScene UI Test");
+    mainWindow->resize(800, 600);
+    mainWindow->setCentralWidget(view);  // 关键：使用 setCentralWidget
+    
+    // 显示窗口并激活
     mainWindow->show();
+    mainWindow->raise();
+    mainWindow->activateWindow();
     QVERIFY(QTest::qWaitForWindowExposed(mainWindow));
     
-    // 等待窗口稳定
-    QTest::qWait(500);
+    // 等待窗口稳定并确保渲染完成
+    QTest::qWait(1000);
+    QApplication::processEvents();
 }
 
 void TestUIInteraction::cleanup()
@@ -112,9 +117,15 @@ void TestUIInteraction::takeScreenshot(const QString &stepName)
         .arg(stepCounter, 2, 10, QChar('0'))
         .arg(stepName);
     
-    // 确保界面更新
+    // 确保界面完全更新和渲染
     QApplication::processEvents();
-    QTest::qWait(300);
+    QTest::qWait(500);  // 增加等待时间
+    QApplication::processEvents();
+    
+    // 确保窗口在前台
+    mainWindow->raise();
+    mainWindow->activateWindow();
+    QTest::qWait(200);
     
     // 截取主窗口
     QPixmap screenshot = mainWindow->grab();
@@ -142,14 +153,16 @@ void TestUIInteraction::testBasicOperations()
     qDebug() << "\n步骤 2: 插入第一个图元（Step类型）";
     scene->setMode(DiagramScene::InsertItem);
     scene->setItemType(DiagramItem::Step);
-    QTest::qWait(300);
+    QTest::qWait(500);
+    QApplication::processEvents();
     
     QPointF pos1(200, 200);
     QGraphicsSceneMouseEvent event1(QEvent::GraphicsSceneMousePress);
     event1.setScenePos(pos1);
     event1.setButton(Qt::LeftButton);
     QApplication::sendEvent(scene, &event1);
-    QTest::qWait(500);
+    QTest::qWait(800);
+    QApplication::processEvents();
     
     QCOMPARE(scene->items().count(), 1);
     takeScreenshot("insert_first_item");
@@ -157,14 +170,16 @@ void TestUIInteraction::testBasicOperations()
     // 步骤 3: 插入第二个图元
     qDebug() << "\n步骤 3: 插入第二个图元（Conditional类型）";
     scene->setItemType(DiagramItem::Conditional);
-    QTest::qWait(300);
+    QTest::qWait(500);
+    QApplication::processEvents();
     
     QPointF pos2(400, 200);
     QGraphicsSceneMouseEvent event2(QEvent::GraphicsSceneMousePress);
     event2.setScenePos(pos2);
     event2.setButton(Qt::LeftButton);
     QApplication::sendEvent(scene, &event2);
-    QTest::qWait(500);
+    QTest::qWait(800);
+    QApplication::processEvents();
     
     QCOMPARE(scene->items().count(), 2);
     takeScreenshot("insert_second_item");
@@ -172,7 +187,8 @@ void TestUIInteraction::testBasicOperations()
     // 步骤 4: 切换到移动模式
     qDebug() << "\n步骤 4: 切换到移动模式";
     scene->setMode(DiagramScene::MoveItem);
-    QTest::qWait(500);
+    QTest::qWait(800);
+    QApplication::processEvents();
     takeScreenshot("switch_to_move_mode");
     
     qDebug() << "\n=== 测试完成！所有截图已保存到" << screenshotDir << "===\n";
