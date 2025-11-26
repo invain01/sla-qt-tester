@@ -57,3 +57,15 @@ export async function scanUnitTests(projectPath: string): Promise<UnitTestFile[]
 export async function runUnitTest(executablePath: string, testName: string): Promise<TestResult> {
   return callPy<TestResult>('run_unit_test', executablePath, testName)
 }
+
+/**
+ * AI 分析测试失败
+ */
+export async function analyzeTestFailure(
+  projectPath: string,
+  testName: string,
+  testFilePath: string,
+  failureOutput: string
+): Promise<string> {
+  return callPy<string>('analyze_test_failure', projectPath, testName, testFilePath, failureOutput)
+}

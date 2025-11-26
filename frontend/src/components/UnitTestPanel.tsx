@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { scanUnitTests, runUnitTest } from '../api/unit-test'
+import { scanUnitTests, runUnitTest, analyzeTestFailure } from '../api/unit-test'
 import type { UnitTestFile, TestResult } from '../api/unit-test'
 
 interface UnitTestPanelProps {
@@ -12,6 +12,8 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
   const [running, setRunning] = useState<Set<string>>(new Set())
   const [selectedTest, setSelectedTest] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<Map<string, string>>(new Map())
+  const [analyzing, setAnalyzing] = useState<Set<string>>(new Set())
 
   // 扫描测试
   const handleScan = async () => {
@@ -58,12 +60,41 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
     }
   }
 
+  // AI 分析失败测试
+  const handleAnalyze = async (test: UnitTestFile) => {
+    const result = results.get(test.name)
+    if (!result || result.status !== 'failed') {
+      return
+    }
+
+    setAnalyzing(prev => new Set(prev).add(test.name))
+    try {
+      const analysis = await analyzeTestFailure(
+        projectPath,
+        test.name,
+        test.file_path,
+        result.output
+      )
+      setAiAnalysis(prev => new Map(prev).set(test.name, analysis))
+    } catch (error) {
+      console.error('AI 分析失败:', error)
+      setAiAnalysis(prev => new Map(prev).set(test.name, `分析失败: ${error}`))
+    } finally {
+      setAnalyzing(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(test.name)
+        return newSet
+      })
+    }
+  }
+
   // 初始加载
   useEffect(() => {
     handleScan()
   }, [projectPath])
 
   const selectedResult = selectedTest ? results.get(selectedTest) : null
+  const selectedAnalysis = selectedTest ? aiAnalysis.get(selectedTest) : null
 
   return (
     <div className="space-y-4">
@@ -145,6 +176,15 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
                       >
                         {isRunning ? '⏳ 运行中...' : '▶ 运行'}
                       </button>
+                      {result && result.status === 'failed' && (
+                        <button
+                          onClick={() => handleAnalyze(test)}
+                          disabled={analyzing.has(test.name)}
+                          className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50 text-sm"
+                        >
+                          {analyzing.has(test.name) ? '🤔 分析中...' : '🤖 AI 分析'}
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedTest(test.name)}
                         disabled={!result}
@@ -216,6 +256,21 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI 分析结果 */}
+            {selectedAnalysis && (
+              <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center gap-2">
+                  <span>🤖</span>
+                  <span>AI 分析结果</span>
+                </h4>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200 font-sans">
+                    {selectedAnalysis}
+                  </pre>
                 </div>
               </div>
             )}

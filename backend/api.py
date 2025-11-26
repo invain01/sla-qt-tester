@@ -11,6 +11,7 @@ from core.qt_project import (
     scan_directory_tree,
     scan_unit_tests,
     run_unit_test,
+    analyze_test_failure,
 )
 from core.utils.logger import logger
 import platform
@@ -221,3 +222,31 @@ class API:
         logger.info(f"运行单元测试: {test_name}")
         result = run_unit_test(executable_path, test_name)
         return result.to_dict()
+    
+    def analyze_test_failure(
+        self, 
+        project_path: str,
+        test_name: str,
+        test_file_path: str,
+        failure_output: str
+    ) -> str:
+        """
+        分析测试失败原因
+        
+        Args:
+            project_path: 项目路径
+            test_name: 测试名称
+            test_file_path: 测试文件路径
+            failure_output: 失败输出
+            
+        Returns:
+            AI 分析结果
+        """
+        logger.info(f"AI 分析测试失败: {test_name}")
+        analysis = analyze_test_failure(
+            project_path,
+            test_name,
+            test_file_path,
+            failure_output
+        )
+        return analysis
