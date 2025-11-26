@@ -169,7 +169,7 @@ export function FilePreview({ file }: FilePreviewProps) {
         </p>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-[#0d1117]">
         {loading && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <div className="text-sm">加载中...</div>
@@ -186,7 +186,7 @@ export function FilePreview({ file }: FilePreviewProps) {
           <>
             {isCodeFile(ext) ? (
               <div 
-                className="p-4 bg-[#0d1117] min-w-full w-fit
+                className="p-4 min-w-full w-fit
                   [&_.shiki]:!bg-transparent [&_.shiki]:!m-0 [&_.shiki]:!p-0
                   [&_pre]:!m-0 [&_pre]:!p-0 [&_pre]:!bg-transparent
                   [&_code]:grid [&_code]:text-sm
@@ -199,7 +199,7 @@ export function FilePreview({ file }: FilePreviewProps) {
                 dangerouslySetInnerHTML={{ __html: content }}
               />
             ) : (
-              <pre className="p-4 bg-[#0d1117] text-sm text-gray-200 whitespace-pre-wrap break-words m-0 min-w-full">
+              <pre className="p-4 text-sm text-gray-200 whitespace-pre-wrap break-words m-0 min-w-full">
                 {content}
               </pre>
             )}
