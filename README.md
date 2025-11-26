@@ -4,6 +4,46 @@
 
 🚀 **SLA Qt Tester** - Qt 可视化测试工具
 
+## 环境配置
+
+### 1. 配置 DeepSeek API Key
+
+项目使用 DeepSeek AI 进行单元测试失败分析。
+
+1. 复制环境变量模板：
+```bash
+cp .env.example .env
+```
+
+2. 编辑 `.env` 文件，填入你的 API Key：
+```bash
+DEEPSEEK_API_KEY=your_api_key_here
+```
+
+3. 获取 API Key：访问 [DeepSeek 平台](https://platform.deepseek.com/) 申请
+
+**注意**：`.env` 文件已在 `.gitignore` 中，不会被提交到 Git。
+
+## 快速开始环境配置
+
+### 1. 配置 DeepSeek API Key
+
+项目使用 DeepSeek AI 进行单元测试失败分析。
+
+1. 复制环境变量模板：
+```bash
+cp .env.example .env
+```
+
+2. 编辑 `.env` 文件，填入你的 API Key：
+```bash
+DEEPSEEK_API_KEY=your_api_key_here
+```
+
+3. 获取 API Key：访问 [DeepSeek 平台](https://platform.deepseek.com/) 申请
+
+**注意**：`.env` 文件已在 `.gitignore` 中，不会被提交到 Git。
+
 ## 🚀 快速开始
 
 ### 1️⃣ 安装依赖
