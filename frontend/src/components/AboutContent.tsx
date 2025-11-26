@@ -3,8 +3,8 @@ export function AboutContent() {
     <div className="space-y-6 text-gray-700 dark:text-gray-300">
       {/* Logo 和标题 */}
       <div className="text-center">
-        <div className="w-20 h-20 bg-linear-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <span className="text-4xl">🧪</span>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+          <img src="/logo.svg" alt="SLA Qt Tester Logo" className="w-full h-full" />
         </div>
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           SLA Qt Tester
@@ -19,36 +19,26 @@ export function AboutContent() {
 
       {/* 功能介绍 */}
       <div className="space-y-4">
-        <h4 className="font-semibold text-gray-900 dark:text-white">核心功能</h4>
-        <div className="grid gap-3">
-          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <span className="text-2xl">📋</span>
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">质量管理</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                静态代码分析、单元测试、代码度量
-              </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
+            <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-md">
+              <span className="text-3xl">📋</span>
             </div>
+            <div className="font-semibold text-gray-900 dark:text-white">质量管理</div>
           </div>
           
-          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <span className="text-2xl">🎯</span>
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">视觉测试</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                实时监控、压力测试、AI 自动化
-              </div>
+          <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow">
+            <div className="w-16 h-16 bg-purple-500 rounded-2xl flex items-center justify-center mb-3 shadow-md">
+              <span className="text-3xl">🎯</span>
             </div>
+            <div className="font-semibold text-gray-900 dark:text-white">视觉测试</div>
           </div>
           
-          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <span className="text-2xl">📁</span>
-            <div>
-              <div className="font-medium text-gray-900 dark:text-white">项目管理</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Qt 项目扫描、文件树浏览、测试用例组织
-              </div>
+          <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
+            <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-md">
+              <span className="text-3xl">📁</span>
             </div>
+            <div className="font-semibold text-gray-900 dark:text-white">项目管理</div>
           </div>
         </div>
       </div>
