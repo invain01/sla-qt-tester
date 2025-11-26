@@ -15,6 +15,7 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
   const [loading, setLoading] = useState(false)
   const [aiAnalysis, setAiAnalysis] = useState<Map<string, string>>(new Map())
   const [analyzing, setAnalyzing] = useState<Set<string>>(new Set())
+  const [renderingMarkdown, setRenderingMarkdown] = useState<Set<string>>(new Set())
 
   // 扫描测试
   const handleScan = async () => {
@@ -69,6 +70,8 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
     }
 
     setAnalyzing(prev => new Set(prev).add(test.name))
+    setRenderingMarkdown(prev => new Set(prev).add(test.name))
+    
     try {
       const analysis = await analyzeTestFailure(
         projectPath,
@@ -76,12 +79,20 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
         test.file_path,
         result.output
       )
-      setAiAnalysis(prev => new Map(prev).set(test.name, analysis))
+      
+      // 渲染 Markdown（异步）
+      const renderedHtml = await renderMarkdown(analysis)
+      setAiAnalysis(prev => new Map(prev).set(test.name, renderedHtml))
     } catch (error) {
       console.error('AI 分析失败:', error)
       setAiAnalysis(prev => new Map(prev).set(test.name, `分析失败: ${error}`))
     } finally {
       setAnalyzing(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(test.name)
+        return newSet
+      })
+      setRenderingMarkdown(prev => {
         const newSet = new Set(prev)
         newSet.delete(test.name)
         return newSet
@@ -180,10 +191,14 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
                       {result && result.status === 'failed' && (
                         <button
                           onClick={() => handleAnalyze(test)}
-                          disabled={analyzing.has(test.name)}
+                          disabled={analyzing.has(test.name) || renderingMarkdown.has(test.name)}
                           className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50 text-sm"
                         >
-                          {analyzing.has(test.name) ? '🤔 分析中...' : '🤖 AI 分析'}
+                          {renderingMarkdown.has(test.name) 
+                            ? '🎨 渲染中...' 
+                            : analyzing.has(test.name) 
+                            ? '🤔 分析中...' 
+                            : '🤖 AI 分析'}
                         </button>
                       )}
                       <button
@@ -275,15 +290,14 @@ export function UnitTestPanel({ projectPath }: UnitTestPanelProps) {
                     prose-code:text-purple-600 dark:prose-code:text-purple-400
                     prose-code:bg-purple-100 dark:prose-code:bg-purple-900/30
                     prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:break-all
-                    prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto
-                    prose-pre:max-w-full prose-pre:whitespace-pre-wrap prose-pre:break-words
                     prose-strong:text-purple-900 dark:prose-strong:text-purple-100
                     prose-ul:text-gray-800 dark:prose-ul:text-gray-200
                     prose-ol:text-gray-800 dark:prose-ol:text-gray-200
                     prose-li:break-words
-                    [&_pre]:max-w-full [&_pre]:overflow-x-auto
-                    [&_code]:max-w-full [&_code]:break-words"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(selectedAnalysis) }}
+                    [&_pre]:!p-0 [&_pre]:!m-0 [&_pre]:!bg-transparent
+                    [&_.shiki]:!bg-gray-900 [&_.shiki]:!p-4 [&_.shiki]:!rounded-lg
+                    [&_.shiki]:overflow-x-auto [&_.shiki]:max-w-full"
+                  dangerouslySetInnerHTML={{ __html: selectedAnalysis }}
                 />
               </div>
             )}
