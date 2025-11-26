@@ -5,9 +5,10 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Image as ImageIcon, FileText 
 
 interface TestHistoryPanelProps {
   projectPath: string
+  refreshTrigger?: number
 }
 
-export function TestHistoryPanel({ projectPath }: TestHistoryPanelProps) {
+export function TestHistoryPanel({ projectPath, refreshTrigger }: TestHistoryPanelProps) {
   const [history, setHistory] = useState<TestRun[]>([])
   const [selectedRun, setSelectedRun] = useState<TestRunDetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -29,13 +30,19 @@ export function TestHistoryPanel({ projectPath }: TestHistoryPanelProps) {
   useEffect(() => {
     loadHistory()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectPath])
+  }, [projectPath, refreshTrigger])
 
   // 加载详情
   const handleSelectRun = async (run: TestRun) => {
     setDetailLoading(true)
     try {
       const detail = await getTestDetail(run.id)
+      console.log('📊 测试详情:', detail)
+      console.log('🖼️ 截图数量:', detail.screenshots?.length || 0)
+      console.log('📝 测试类型:', detail.test_type)
+      if (detail.screenshots && detail.screenshots.length > 0) {
+        console.log('🎯 第一张截图:', detail.screenshots[0])
+      }
       setSelectedRun(detail)
     } catch (error) {
       console.error('加载详情失败:', error)

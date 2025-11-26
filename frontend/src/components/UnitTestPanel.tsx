@@ -19,6 +19,7 @@ export function UnitTestPanel({ projectPath, onViewFile }: UnitTestPanelProps) {
   const [aiAnalysis, setAiAnalysis] = useState<Map<string, string>>(new Map())
   const [analyzing, setAnalyzing] = useState<Set<string>>(new Set())
   const [renderingMarkdown, setRenderingMarkdown] = useState<Set<string>>(new Set())
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0)
 
   // 扫描测试
   const handleScan = async () => {
@@ -52,6 +53,9 @@ export function UnitTestPanel({ projectPath, onViewFile }: UnitTestPanelProps) {
       
       setResults(prev => new Map(prev).set(test.name, result))
       setSelectedTest(test.name)
+      
+      // 刷新测试历史
+      setHistoryRefreshTrigger(prev => prev + 1)
     } catch (error) {
       console.error('运行测试失败:', error)
     } finally {
@@ -147,7 +151,7 @@ export function UnitTestPanel({ projectPath, onViewFile }: UnitTestPanelProps) {
       {/* 标签页内容 */}
       {/* 测试历史标签页 */}
       <div className={`flex-1 overflow-hidden ${activeTab === 'history' ? '' : 'hidden'}`}>
-        <TestHistoryPanel projectPath={projectPath} />
+        <TestHistoryPanel projectPath={projectPath} refreshTrigger={historyRefreshTrigger} />
       </div>
 
       {/* 运行测试标签页 */}
