@@ -466,7 +466,8 @@ class API:
         project_dir: str,
         include_paths: List[str] = None,
         enable_checks: List[str] = None,
-        severity: str = "warning"
+        severity: str = "warning",
+        cppcheck_options: Dict = None
     ) -> Dict:
         """
         对项目进行静态代码分析
@@ -476,6 +477,7 @@ class API:
             include_paths: 额外的头文件搜索路径
             enable_checks: 启用的检查类型
             severity: 严重程度过滤
+            cppcheck_options: cppcheck 选项配置
             
         Returns:
             分析结果
@@ -484,7 +486,8 @@ class API:
             project_dir=project_dir,
             include_paths=include_paths,
             enable_checks=enable_checks,
-            severity=severity
+            severity=severity,
+            cppcheck_options=cppcheck_options
         )
     
     def analyze_file_static(self, project_dir: str, file_path: str) -> Dict:

@@ -10,6 +10,8 @@ import {
   type CppcheckStatus,
   type ProjectAnalysisResult,
   type CodeIssue,
+  type CppcheckOptions,
+  type CheckTypeOptions,
 } from '../api/static-analysis';
 
 interface StaticAnalysisPanelProps {
@@ -26,6 +28,27 @@ export default function StaticAnalysisPanel({ projectPath }: StaticAnalysisPanel
   const [analysisResult, setAnalysisResult] = useState<ProjectAnalysisResult | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<CodeIssue | null>(null);
   const [viewTab, setViewTab] = useState<ViewTab>('severity');
+  const [showOptions, setShowOptions] = useState(false);
+  
+  // Cppcheck 参数选项
+  const [cppcheckOptions, setCppcheckOptions] = useState<CppcheckOptions>({
+    inconclusive: false,
+    jobs: 1,
+    max_configs: 12,
+    platform: '',
+    std: '',
+  });
+  
+  // 检查类型选项
+  const [checkTypes, setCheckTypes] = useState<CheckTypeOptions>({
+    warning: true,
+    style: true,
+    performance: true,
+    portability: true,
+    information: true,
+    unusedFunction: false,
+    missingInclude: false,
+  });
 
   // 检查 cppcheck 状态
   const checkStatus = async () => {
@@ -71,7 +94,22 @@ export default function StaticAnalysisPanel({ projectPath }: StaticAnalysisPanel
     setSelectedIssue(null);
 
     try {
-      const result = await analyzeProject(projectPath);
+      // 构建选项，过滤空值
+      const options = {
+        checkTypes: checkTypes,
+        cppcheckOptions: {
+          inconclusive: cppcheckOptions.inconclusive || undefined,
+          jobs: cppcheckOptions.jobs > 1 ? cppcheckOptions.jobs : undefined,
+          max_configs: cppcheckOptions.max_configs && cppcheckOptions.max_configs !== 12 ? cppcheckOptions.max_configs : undefined,
+          platform: cppcheckOptions.platform || undefined,
+          std: cppcheckOptions.std || undefined,
+        },
+      };
+      
+      // 调试输出
+      console.log('分析参数:', options);
+      
+      const result = await analyzeProject(projectPath, options);
       setAnalysisResult(result);
       
       if (!result.success) {
@@ -165,6 +203,18 @@ export default function StaticAnalysisPanel({ projectPath }: StaticAnalysisPanel
             </button>
           )}
 
+          {/* 参数配置按钮 */}
+          <button
+            onClick={() => setShowOptions(!showOptions)}
+            className={`px-3 py-1.5 text-sm rounded transition-colors ${
+              showOptions 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
+          >
+            {showOptions ? '隐藏参数' : '配置参数'}
+          </button>
+
           {/* 运行分析按钮 */}
           <button
             onClick={handleAnalyze}
@@ -175,6 +225,273 @@ export default function StaticAnalysisPanel({ projectPath }: StaticAnalysisPanel
           </button>
         </div>
       </div>
+
+      {/* Cppcheck 参数配置面板 */}
+      {showOptions && (
+        <div className="max-h-[60vh] overflow-y-auto p-4 bg-white border-b">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Cppcheck 参数配置</h3>
+          
+          {/* 检查类别选择 */}
+          <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+            <h4 className="text-sm font-semibold text-gray-800 mb-2">🔍 检查类别选择</h4>
+            <div className="text-xs text-gray-600 mb-2">
+              ℹ️ <strong>检查类别</strong> 控制 cppcheck 检查哪些类型的问题，结果中的 <strong>严重程度</strong> (error/warning/style/...) 由 cppcheck 自动判定
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.warning}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, warning: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">warning</span>
+                  <span className="text-xs text-gray-500 block">常规警告级别检查（默认）</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.style}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, style: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">style</span>
+                  <span className="text-xs text-gray-500 block">代码风格和编码规范</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.performance}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, performance: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">performance</span>
+                  <span className="text-xs text-gray-500 block">性能优化建议</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.portability}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, portability: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">portability</span>
+                  <span className="text-xs text-gray-500 block">跨平台兼容性</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.information}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, information: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">information</span>
+                  <span className="text-xs text-gray-500 block">信息性消息</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.unusedFunction}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, unusedFunction: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">unusedFunction</span>
+                  <span className="text-xs text-gray-500 block">未使用函数（较慢）</span>
+                </span>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-100 p-2 rounded">
+                <input
+                  type="checkbox"
+                  checked={checkTypes.missingInclude}
+                  onChange={(e) => setCheckTypes({ ...checkTypes, missingInclude: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <span className="font-medium">missingInclude</span>
+                  <span className="text-xs text-gray-500 block">缺失头文件（较慢）</span>
+                </span>
+              </label>
+              
+              <div className="col-span-2 flex gap-2 pt-2 border-t border-blue-200">
+                <button
+                  onClick={() => setCheckTypes({
+                    warning: true,
+                    style: true,
+                    performance: true,
+                    portability: true,
+                    information: true,
+                    unusedFunction: true,
+                    missingInclude: true,
+                  })}
+                  className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  全选
+                </button>
+                <button
+                  onClick={() => setCheckTypes({
+                    warning: false,
+                    style: false,
+                    performance: false,
+                    portability: false,
+                    information: false,
+                    unusedFunction: false,
+                    missingInclude: false,
+                  })}
+                  className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  全不选
+                </button>
+                <button
+                  onClick={() => setCheckTypes({
+                    warning: true,
+                    style: true,
+                    performance: true,
+                    portability: true,
+                    information: true,
+                    unusedFunction: false,
+                    missingInclude: false,
+                  })}
+                  className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  推荐配置
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* 其他参数 */}
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">⚙️ 高级参数</h4>
+          <div className="grid grid-cols-2 gap-4">
+            {/* 不确定性检查 */}
+            <div className="col-span-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="inconclusive"
+                  checked={cppcheckOptions.inconclusive}
+                  onChange={(e) => setCppcheckOptions({ ...cppcheckOptions, inconclusive: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="inconclusive" className="text-sm text-gray-700">
+                  <strong>--inconclusive</strong> 不确定性检查
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 ml-6 mt-1">
+                启用可能不确定的检查。cppcheck 对某些问题无法 100% 确定是否为 bug，启用此选项会报告这些不确定的问题（可能产生误报）
+              </p>
+            </div>
+
+            {/* 并行线程数 */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="jobs" className="text-sm text-gray-700 whitespace-nowrap">
+                并行线程数:
+              </label>
+              <input
+                type="number"
+                id="jobs"
+                min="1"
+                max="16"
+                value={cppcheckOptions.jobs}
+                onChange={(e) => setCppcheckOptions({ ...cppcheckOptions, jobs: parseInt(e.target.value) || 1 })}
+                className="w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* 最大配置数 */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="max_configs" className="text-sm text-gray-700 whitespace-nowrap">
+                最大配置数:
+              </label>
+              <input
+                type="number"
+                id="max_configs"
+                min="1"
+                max="100"
+                value={cppcheckOptions.max_configs}
+                onChange={(e) => setCppcheckOptions({ ...cppcheckOptions, max_configs: parseInt(e.target.value) || 12 })}
+                className="w-20 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* 目标平台 */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="platform" className="text-sm text-gray-700 whitespace-nowrap">
+                目标平台:
+              </label>
+              <select
+                id="platform"
+                value={cppcheckOptions.platform}
+                onChange={(e) => setCppcheckOptions({ ...cppcheckOptions, platform: e.target.value })}
+                className="flex-1 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">自动检测</option>
+                <option value="unix32">Unix 32-bit</option>
+                <option value="unix64">Unix 64-bit</option>
+                <option value="win32A">Windows 32-bit ANSI</option>
+                <option value="win32W">Windows 32-bit Unicode</option>
+                <option value="win64">Windows 64-bit</option>
+              </select>
+            </div>
+
+            {/* C++ 标准 */}
+            <div className="flex items-center gap-2 col-span-2">
+              <label htmlFor="std" className="text-sm text-gray-700 whitespace-nowrap">
+                C++ 标准:
+              </label>
+              <select
+                id="std"
+                value={cppcheckOptions.std}
+                onChange={(e) => setCppcheckOptions({ ...cppcheckOptions, std: e.target.value })}
+                className="flex-1 px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">自动检测</option>
+                <option value="c++11">C++11</option>
+                <option value="c++14">C++14</option>
+                <option value="c++17">C++17</option>
+                <option value="c++20">C++20</option>
+                <option value="c++23">C++23</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* 参数说明 */}
+          <div className="mt-3 p-3 bg-blue-50 rounded text-xs text-gray-600">
+            <p className="font-semibold mb-1">💡 参数说明:</p>
+            <div className="mb-2 pb-2 border-b border-blue-200">
+              <p className="font-semibold text-blue-800">检查类别 vs 严重程度：</p>
+              <ul className="list-disc list-inside space-y-1 mt-1">
+                <li><strong>检查类别</strong>：上面选择的选项，控制 cppcheck 检查哪些类型的问题</li>
+                <li><strong>严重程度</strong>：结果中显示的 error/warning/style 等，由 cppcheck 自动判定</li>
+              </ul>
+            </div>
+            <p className="font-semibold text-blue-800 mb-1">高级参数说明：</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li><strong>不确定检查 (--inconclusive):</strong> 报告 cppcheck 无法 100% 确定的问题。建议关闭以减少误报</li>
+              <li><strong>并行线程数 (-j):</strong> 使用多线程加速检查，建议设置为 CPU 核心数（如 4 或 8）</li>
+              <li><strong>最大配置数 (--max-configs):</strong> 限制每个文件检查的配置数量，减少检查时间但可能遗漏问题</li>
+              <li><strong>目标平台 (--platform):</strong> 指定代码的目标平台，影响 int/long 等类型的大小判断</li>
+              <li><strong>C++ 标准 (--std):</strong> 指定使用的 C++ 标准版本，影响语法和库检查</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* 主内容区域 */}
       <div className="flex-1 overflow-hidden">
