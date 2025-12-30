@@ -24,7 +24,7 @@
     
     "选择处理节点": {
         "recognition": "TemplateMatch",
-        "template": ["NodesIcon/Step.png"],
+        "template": ["NodesIcon/Disk.jpg"],
         "threshold": [0.6],
         "roi": [0, 50, 200, 800],
         "timeout": 5000,
@@ -46,7 +46,7 @@
     
     "选择判断节点": {
         "recognition": "TemplateMatch",
-        "template": ["NodesIcon/Conditional.png"],
+        "template": ["NodesIcon/Disk.jpg"],
         "threshold": [0.6],
         "roi": [0, 50, 200, 800],
         "timeout": 5000,
@@ -68,7 +68,7 @@
     
     "选择端点节点": {
         "recognition": "TemplateMatch",
-        "template": ["NodesIcon/StartEnd.png"],
+        "template": ["NodesIcon/Disk.jpg"],
         "threshold": [0.6],
         "roi": [0, 50, 200, 800],
         "timeout": 5000,
