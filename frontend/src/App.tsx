@@ -8,8 +8,9 @@ import { UnitTestPanel } from './components/UnitTestPanel'
 import { FilePreview } from './components/FilePreview'
 import { VisualTestPanel } from './components/VisualTestPanel'
 import StaticAnalysisPanel from './components/StaticAnalysisPanel'
+import { HistoryPanel } from './components/HistoryPanel'
 
-type ViewMode = 'overview' | 'quality' | 'visual' | 'settings' | 'filePreview' | 'staticAnalysis'
+type ViewMode = 'overview' | 'quality' | 'visual' | 'settings' | 'filePreview' | 'staticAnalysis' | 'history'
 
 function App() {
   // 项目列表状态
@@ -262,7 +263,7 @@ function App() {
         </aside>
       )}
 
-      {/* 右侧：测试主体区域 */}
+      {/* 主体：测试区域 */}
       <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {!selectedProject ? (
           <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
@@ -331,6 +332,15 @@ function App() {
                   }`}
               >
                 📄 文件预览
+              </button>
+              <button
+                onClick={() => setViewMode('history')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${viewMode === 'history'
+                    ? 'bg-pink-500 text-white shadow-md'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+              >
+                📚 历史记录
               </button>
             </div>
 
@@ -441,6 +451,12 @@ function App() {
                   projectPath={selectedProject?.path || ''}
                   highlightLines={fileViewState.lines}
                 />
+              </div>
+            )}
+
+            {viewMode === 'history' && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <HistoryPanel projectPath={selectedProject?.path} />
               </div>
             )}
           </div>

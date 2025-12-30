@@ -455,6 +455,195 @@ class API:
         deleted = self.test_db.cleanup_old_records(days)
         return {"deleted": deleted, "success": True}
     
+    def delete_test_records(self, run_ids: List[int]) -> Dict:
+        """
+        删除测试记录
+        
+        Args:
+            run_ids: 要删除的测试运行ID列表
+            
+        Returns:
+            删除结果
+        """
+        logger.info(f"删除测试记录: {run_ids}")
+        try:
+            deleted = self.test_db.delete_test_runs(run_ids)
+            return {"deleted": deleted, "success": True}
+        except Exception as e:
+            logger.error(f"删除测试记录失败: {e}")
+            return {"error": str(e), "success": False}
+    
+    def get_all_test_history(self, limit: int = 200) -> List[Dict]:
+        """
+        获取所有测试历史记录
+        
+        Args:
+            limit: 返回记录数量
+            
+        Returns:
+            测试历史列表
+        """
+        logger.info("获取所有测试历史")
+        runs = self.test_db.get_all_test_runs(limit)
+        return [run.to_dict() for run in runs]
+    
+    def export_test_records_html(self, run_ids: List[int]) -> Dict:
+        """
+        导出测试记录为HTML并保存到log目录
+        
+        Args:
+            run_ids: 要导出的测试运行ID列表
+            
+        Returns:
+            导出结果（包含文件路径）
+        """
+        from datetime import datetime
+        from pathlib import Path
+        
+        logger.info(f"导出测试记录为HTML: {run_ids}")
+        try:
+            # 生成HTML内容
+            html_content = self._generate_html_report(run_ids)
+            
+            # 确保log目录存在
+            log_dir = Path("log")
+            log_dir.mkdir(exist_ok=True)
+            
+            # 生成文件名
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"test_records_{timestamp}.html"
+            file_path = log_dir / filename
+            
+            # 保存HTML文件
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            logger.info(f"HTML报告已保存到: {file_path.absolute()}")
+            
+            return {
+                "success": True,
+                "file_path": str(file_path.absolute()),
+                "filename": filename
+            }
+        except Exception as e:
+            logger.error(f"导出HTML失败: {e}")
+            return {"error": str(e), "success": False}
+    
+    def _generate_html_report(self, run_ids: List[int]) -> str:
+        """
+        生成HTML报告
+        
+        Args:
+            run_ids: 测试运行ID列表
+            
+        Returns:
+            HTML内容
+        """
+        from datetime import datetime
+        
+        # 获取测试详情
+        test_details = []
+        for run_id in run_ids:
+            detail = self.test_db.get_test_run_detail(run_id)
+            if detail:
+                test_details.append(detail)
+        
+        # 生成HTML
+        html_parts = [
+            "<!DOCTYPE html>",
+            "<html>",
+            "<head>",
+            "    <meta charset='utf-8'>",
+            "    <title>测试记录报告</title>",
+            "    <style>",
+            "        body { font-family: Arial, sans-serif; margin: 20px; }",
+            "        .header { background-color: #f5f5f5; padding: 20px; margin-bottom: 20px; }",
+            "        .test-run { border: 1px solid #ddd; margin: 10px 0; padding: 15px; }",
+            "        .test-run.passed { border-left: 5px solid #28a745; }",
+            "        .test-run.failed { border-left: 5px solid #dc3545; }",
+            "        .test-run.error { border-left: 5px solid #ffc107; }",
+            "        .test-details { margin: 10px 0; }",
+            "        .test-case { padding: 5px 0; border-bottom: 1px solid #eee; }",
+            "        .test-case.PASS { color: #28a745; }",
+            "        .test-case.FAIL { color: #dc3545; }",
+            "        .screenshot { margin: 10px 0; }",
+            "        .screenshot img { max-width: 500px; border: 1px solid #ddd; }",
+            "        table { border-collapse: collapse; width: 100%; }",
+            "        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }",
+            "        th { background-color: #f2f2f2; }",
+            "    </style>",
+            "</head>",
+            "<body>",
+            f"    <div class='header'>",
+            f"        <h1>测试记录报告</h1>",
+            f"        <p>导出时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>",
+            f"        <p>包含 {len(test_details)} 条测试记录</p>",
+            f"    </div>",
+        ]
+        
+        # 添加每个测试的详情
+        for detail in test_details:
+            run = detail.run
+            status_class = run.status.lower()
+            
+            html_parts.extend([
+                f"    <div class='test-run {status_class}'>",
+                f"        <h2>{run.test_name} ({run.test_type.upper()})</h2>",
+                f"        <p><strong>项目:</strong> {run.project_path}</p>",
+                f"        <p><strong>状态:</strong> {run.status} | <strong>耗时:</strong> {run.duration}</p>",
+                f"        <p><strong>统计:</strong> 总计 {run.total}, 通过 {run.passed}, 失败 {run.failed}, 跳过 {run.skipped}</p>",
+                f"        <p><strong>执行时间:</strong> {run.created_at}</p>",
+            ])
+            
+            if detail.details:
+                html_parts.append("        <div class='test-details'>")
+                html_parts.append("            <h3>测试用例详情</h3>")
+                for case in detail.details:
+                    html_parts.append(f"            <div class='test-case {case.status}'>")
+                    html_parts.append(f"                <strong>{case.case_name}</strong>: {case.status}")
+                    if case.message:
+                        html_parts.append(f" - {case.message}")
+                    html_parts.append("            </div>")
+                html_parts.append("        </div>")
+            
+            if detail.screenshots:
+                html_parts.append("        <div class='screenshots'>")
+                html_parts.append("            <h3>测试截图</h3>")
+                for screenshot in detail.screenshots:
+                    if screenshot.image_data:
+                        import base64
+                        image_b64 = base64.b64encode(screenshot.image_data).decode('utf-8')
+                        html_parts.append(f"            <div class='screenshot'>")
+                        html_parts.append(f"                <h4>步骤 {screenshot.step_number}: {screenshot.step_name}</h4>")
+                        html_parts.append(f"                <img src='data:image/png;base64,{image_b64}' alt='{screenshot.step_name}'>")
+                        html_parts.append("            </div>")
+                html_parts.append("        </div>")
+            
+            if run.output:
+                html_parts.extend([
+                    "        <div class='output'>",
+                    "            <h3>输出日志</h3>",
+                    f"            <pre>{run.output}</pre>",
+                    "        </div>",
+                ])
+            
+            if run.ai_analysis:
+                html_parts.extend([
+                    "        <div class='ai-analysis'>",
+                    "            <h3>AI 分析</h3>",
+                    f"            <p>{run.ai_analysis}</p>",
+                    "        </div>",
+                ])
+            
+            html_parts.append("    </div>")
+        
+        html_parts.extend([
+            "</body>",
+            "</html>",
+        ])
+        
+        return "\n".join(html_parts)
+    
     # ==================== 静态分析 API ====================
     
     def check_cppcheck_status(self) -> Dict:
