@@ -336,34 +336,51 @@ function App() {
 
             {/* 根据 viewMode 显示不同内容 */}
             {viewMode === 'overview' && projectDetail && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                  项目概览
-                </h2>
+              <div className="space-y-6">
+                {/* 项目概览基础信息 */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                    项目概览
+                  </h2>
 
-                <div className="grid grid-cols-4 gap-3 mb-4">
-                  <InfoCard label="C++ 文件" value={projectDetail.cpp_count} />
-                  <InfoCard label="头文件" value={projectDetail.header_count} />
-                  <InfoCard label="UI 文件" value={projectDetail.ui_count} />
-                  <InfoCard label="资源文件" value={projectDetail.qrc_count} />
+                  <div className="grid grid-cols-4 gap-3 mb-4">
+                    <InfoCard label="C++ 文件" value={projectDetail.cpp_count} />
+                    <InfoCard label="头文件" value={projectDetail.header_count} />
+                    <InfoCard label="UI 文件" value={projectDetail.ui_count} />
+                    <InfoCard label="资源文件" value={projectDetail.qrc_count} />
+                  </div>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2">
+                      项目路径
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                      {projectDetail.path}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-2">
-                    项目路径
+                {/* 快速功能入口 */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                    快速功能
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-700 p-2 rounded">
-                    {projectDetail.path}
-                  </p>
-                </div>
-
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                    🚧 测试功能开发中
-                  </h3>
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    测试用例管理和执行功能正在开发中。当前可以浏览项目文件结构。
-                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => setViewMode('visual')}
+                      className="w-16 h-16 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors flex items-center justify-center"
+                      title="实时监控"
+                    >
+                      <span className="text-3xl">📹</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('visual')}
+                      className="w-16 h-16 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center"
+                      title="压力测试"
+                    >
+                      <span className="text-3xl">⚡</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
