@@ -286,3 +286,55 @@ class TestDatabase:
                 'failed_runs': row[2] or 0,
                 'unique_tests': row[3] or 0
             }
+    
+    def delete_test_runs(self, run_ids: List[int]) -> int:
+        """
+        删除测试记录
+        
+        Args:
+            run_ids: 要删除的测试运行ID列表
+            
+        Returns:
+            删除的记录数
+        """
+        if not run_ids:
+            return 0
+            
+        placeholders = ','.join(['?' for _ in run_ids])
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 删除相关的测试用例详情和截图（外键约束会自动删除）
+            cursor.execute(f"""
+                DELETE FROM test_runs WHERE id IN ({placeholders})
+            """, run_ids)
+            
+            deleted = cursor.rowcount
+            conn.commit()
+            logger.info(f"删除了 {deleted} 条测试记录")
+            return deleted
+    
+    def get_all_test_runs(self, limit: int = 200) -> List[TestRun]:
+        """
+        获取所有测试历史记录
+        
+        Args:
+            limit: 返回记录数量
+            
+        Returns:
+            测试记录列表
+        """
+        logger.info(f"查询所有测试历史, limit={limit}")
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT * FROM test_runs
+                ORDER BY created_at DESC
+                LIMIT ?
+            """, (limit,))
+            
+            rows = cursor.fetchall()
+            logger.info(f"查询到 {len(rows)} 条记录")
+            return [TestRun(**dict(row)) for row in rows]

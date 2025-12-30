@@ -759,3 +759,273 @@ class VisualAgent:
             "description": "MAA 风格视觉识别系统"
         }
 
+    def generate_pipeline_json(self, prompt: str, test_name: str = None) -> Dict[str, Any]:
+        """
+        根据自然语言提示词生成Pipeline JSON配置文件
+        
+        Args:
+            prompt: 用户输入的自然语言测试描述
+            test_name: 测试名称（可选，用于生成文件名）
+            
+        Returns:
+            生成结果，包含文件路径和内容
+        """
+        import json
+        from datetime import datetime
+        
+        if not self.ai_client:
+            return {
+                "success": False,
+                "error": "AI 客户端未初始化，请配置 SPARK_API_KEY"
+            }
+        
+        logger.info(f"生成 Pipeline JSON: {prompt}")
+        
+        try:
+            # 构建系统提示词 - 基于 PIPELINE_USER_GUIDE.md 的详细格式
+            system_prompt = """你是一个视觉自动化测试专家。用户会用自然语言描述测试场景，你需要将其转换为可执行的 Pipeline JSON 配置。
+
+## Pipeline JSON 格式规范
+
+### 基本结构
+```json
+{
+    "$comment": "测试描述（可选注释）",
+    "$resource_base": "../resources/freecharts",
+    
+    "节点名称": {
+        "recognition": "识别类型",
+        "action": "动作类型",
+        "next": ["下一个节点"]
+    }
+}
+```
+
+### 识别类型（recognition）
+
+1. **DirectHit** - 直接命中，不做图像识别，用于固定坐标操作或流程控制
+   ```json
+   {
+       "recognition": "DirectHit",
+       "action": "Click",
+       "target": [500, 300]
+   }
+   ```
+
+2. **TemplateMatch** - 模板匹配（推荐用于找图点击）
+   ```json
+   {
+       "recognition": "TemplateMatch",
+       "template": ["icons/button.png"],
+       "threshold": [0.2],
+       "roi": [0, 100, 220, 700],
+       "multi_scale": false,
+       "action": "Click",
+       "target": true
+   }
+   ```
+   - template: 模板图片路径列表
+   - threshold: 匹配阈值，0.2较宽松，不要超过0.3
+   - roi: 搜索区域 [x, y, width, height]
+   - multi_scale: 是否多尺度匹配，建议false
+   - target: true表示点击识别位置
+
+3. **ColorMatch** - 颜色匹配
+   ```json
+   {
+       "recognition": "ColorMatch",
+       "lower": [0, 100, 100],
+       "upper": [10, 255, 255],
+       "count": 100,
+       "connected": true,
+       "action": "Click",
+       "target": true
+   }
+   ```
+   - lower/upper: HSV颜色范围
+   - count: 最少像素数
+   - connected: 只返回连通区域
+
+### 动作类型（action）
+
+1. **DoNothing** - 不执行动作，仅识别
+2. **Click** - 点击
+   - target: true（点击识别位置）或 [x, y]（固定坐标）
+   - target_offset: [x, y, 0, 0] 偏移量
+3. **Swipe** - 滑动
+   - begin: true 或 [x, y]
+   - end: [x, y]
+   - duration: 滑动时长(ms)
+4. **InputText** - 输入文本
+   - input_text: "要输入的文本"
+5. **Wait** - 等待
+   - duration: 等待时长(ms)
+6. **LongPress** - 长按
+   - duration: 长按时长(ms)
+
+### 通用参数
+- next: ["下一节点"] - 后续节点列表
+- pre_delay: 200 - 动作前延迟(ms)
+- post_delay: 500 - 动作后延迟(ms)
+- timeout: 20000 - 超时时间(ms)
+- roi: [x, y, w, h] - 识别区域
+- enabled: true/false - 是否启用
+
+### 常用ROI参考（FreeCharts编辑器）
+- 工具箱区域: [0, 100, 220, 700]
+- 画布区域: [220, 100, 1200, 800]
+- 全屏: null 或不设置
+
+## 生成要求
+
+1. **必须生成可执行的配置**：
+   - 对于需要点击的操作，使用具体坐标或模板匹配
+   - 模板路径使用占位符如 "templates/xxx.png"，用户需替换为实际路径
+   
+2. **合理的流程设计**：
+   - 第一个节点通常是 "开始测试"，用 DirectHit + DoNothing 初始化
+   - 每个操作节点都要有 pre_delay 和 post_delay
+   - 最后一个节点的 next 为空数组 []
+
+3. **参数设置**：
+   - threshold 建议使用 [0.2]
+   - multi_scale 建议设为 false
+   - 为操作添加适当的延迟
+
+## 输出示例
+
+```json
+{
+    "$comment": "在画布上绘制矩形的测试",
+    "开始测试": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "pre_delay": 1000,
+        "next": ["选择矩形工具"]
+    },
+    "选择矩形工具": {
+        "recognition": "TemplateMatch",
+        "template": ["templates/rect_tool.png"],
+        "threshold": [0.2],
+        "roi": [0, 100, 220, 700],
+        "multi_scale": false,
+        "action": "Click",
+        "target": true,
+        "pre_delay": 300,
+        "post_delay": 500,
+        "next": ["在画布点击放置"]
+    },
+    "在画布点击放置": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [600, 400],
+        "pre_delay": 200,
+        "post_delay": 500,
+        "next": ["验证放置成功"]
+    },
+    "验证放置成功": {
+        "recognition": "TemplateMatch",
+        "template": ["templates/rect_on_canvas.png"],
+        "threshold": [0.2],
+        "roi": [220, 100, 1200, 800],
+        "multi_scale": false,
+        "action": "DoNothing",
+        "next": []
+    }
+}
+```
+
+请根据用户描述生成完整可执行的 Pipeline JSON。只返回 JSON，不要有其他文字说明。"""
+
+            # 调用 AI API
+            logger.info("正在调用 AI 生成 Pipeline...")
+            
+            response = self.ai_client.chat.completions.create(
+                model=self.ai_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"请根据以下测试需求生成 Pipeline JSON 配置：\n\n{prompt}"}
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                stream=False
+            )
+            
+            ai_response = response.choices[0].message.content
+            logger.info(f"AI 响应: {ai_response}")
+            
+            # 尝试解析 JSON（处理可能的 markdown 代码块）
+            json_content = ai_response.strip()
+            if json_content.startswith("```"):
+                # 移除 markdown 代码块标记
+                lines = json_content.split("\n")
+                json_lines = []
+                in_json = False
+                for line in lines:
+                    if line.startswith("```json") or line.startswith("```"):
+                        in_json = not in_json
+                        continue
+                    if in_json or (not line.startswith("```")):
+                        json_lines.append(line)
+                json_content = "\n".join(json_lines).strip()
+            
+            # 验证 JSON 格式
+            try:
+                pipeline_config = json.loads(json_content)
+            except json.JSONDecodeError as e:
+                logger.error(f"AI 返回的 JSON 格式错误: {e}")
+                return {
+                    "success": False,
+                    "error": f"AI 返回的 JSON 格式错误: {e}",
+                    "raw_response": ai_response
+                }
+            
+            # 生成文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            if test_name:
+                # 清理文件名中的非法字符
+                safe_name = "".join(c if c.isalnum() or c in "_-" else "_" for c in test_name)
+                filename = f"ai_pipeline_{safe_name}_{timestamp}.json"
+            else:
+                filename = f"ai_pipeline_{timestamp}.json"
+            
+            # 保存到 log 目录
+            log_dir = Path(__file__).parent.parent.parent / "log"
+            log_dir.mkdir(exist_ok=True)
+            file_path = log_dir / filename
+            
+            # 写入文件
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(pipeline_config, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"Pipeline JSON 已保存: {file_path}")
+            
+            # 获取入口节点（第一个键）
+            entry_nodes = list(pipeline_config.keys())
+            
+            return {
+                "success": True,
+                "file_path": str(file_path),
+                "filename": filename,
+                "prompt": prompt,
+                "pipeline_config": pipeline_config,
+                "entry_nodes": entry_nodes,
+                "node_count": len(pipeline_config),
+                "message": f"Pipeline JSON 已生成并保存到 {filename}"
+            }
+            
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"生成 Pipeline JSON 失败: {error_msg}")
+            
+            # 提供更友好的错误提示
+            if "401" in error_msg or "HMAC" in error_msg:
+                error_msg = "API Key 认证失败，请检查 SPARK_API_KEY 配置"
+            elif "timeout" in error_msg.lower():
+                error_msg = "API 调用超时，请检查网络连接"
+            
+            return {
+                "success": False,
+                "error": error_msg
+            }
+

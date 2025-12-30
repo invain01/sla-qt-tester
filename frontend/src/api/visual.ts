@@ -17,6 +17,7 @@ declare global {
         execute_ai_command: (command: string) => Promise<AiCommandResult>
         verify_visual_result: (pattern: string) => Promise<VisualVerifyResult>
         set_ai_api_key: (apiKey: string, baseUrl?: string) => Promise<ApiResult>
+        generate_ai_pipeline: (prompt: string, testName?: string) => Promise<GeneratePipelineResult>
         // MAA 风格视觉识别 API
         find_template: (templatePath: string, threshold?: number, roi?: number[]) => Promise<TemplateMatchResult>
         find_color: (lower: number[], upper: number[], roi?: number[], colorSpace?: string, minCount?: number) => Promise<ColorMatchResult>
@@ -75,6 +76,16 @@ export interface VisualVerifyResult extends ApiResult {
   edge_ratio?: number
   verified?: boolean
   message?: string
+}
+
+export interface GeneratePipelineResult extends ApiResult {
+  file_path?: string
+  filename?: string
+  prompt?: string
+  pipeline_config?: Record<string, PipelineNode>
+  entry_nodes?: string[]
+  node_count?: number
+  raw_response?: string
 }
 
 // ==================== MAA 风格视觉识别类型 ====================
@@ -237,6 +248,14 @@ export const visual = {
   
   setApiKey: (apiKey: string, baseUrl?: string) => 
     callPy<ApiResult>('set_ai_api_key', apiKey, baseUrl),
+
+  /**
+   * 根据自然语言提示词生成 Pipeline JSON 配置文件
+   * @param prompt 自然语言测试描述
+   * @param testName 测试名称（可选，用于生成文件名）
+   */
+  generateAiPipeline: (prompt: string, testName?: string) =>
+    callPy<GeneratePipelineResult>('generate_ai_pipeline', prompt, testName),
 
   // ==================== MAA 风格视觉识别 ====================
   

@@ -98,3 +98,24 @@ export async function getTestStatistics(projectPath: string): Promise<TestStatis
 export async function cleanupOldTests(days: number): Promise<{ deleted: number; success: boolean }> {
   return callPy<{ deleted: number; success: boolean }>('cleanup_old_tests', days)
 }
+
+/**
+ * 获取所有测试历史记录
+ */
+export async function getAllTestHistory(limit = 200): Promise<TestRun[]> {
+  return callPy<TestRun[]>('get_all_test_history', limit)
+}
+
+/**
+ * 删除测试记录
+ */
+export async function deleteTestRecords(runIds: number[]): Promise<{ deleted: number; success: boolean; error?: string }> {
+  return callPy<{ deleted: number; success: boolean; error?: string }>('delete_test_records', runIds)
+}
+
+/**
+ * 导出测试记录为HTML
+ */
+export async function exportTestRecordsHTML(runIds: number[]): Promise<{ file_path: string; filename: string; success: boolean; error?: string }> {
+  return callPy<{ file_path: string; filename: string; success: boolean; error?: string }>('export_test_records_html', runIds)
+}
